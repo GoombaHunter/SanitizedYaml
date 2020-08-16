@@ -1,0 +1,57 @@
+version: "3.6"
+services:
+  gitlab:
+    deploy:
+      mode: replicated
+      labels:
+        com.docker.aws.lb.arn: "arn:aws:acm:us-east-1:064370803561:certificate/PRI-VATE@SSL:13443"
+    image: gitlab/gitlab-ce:latest
+    ports:
+      - "13022:22"
+      - "13080:80"
+      - "13567:4567"
+      - target: 443
+        published: 13443
+        protocol: tcp
+        mode: ingress
+    volumes:
+      - gitlab_data:/var/opt/gitlab
+      - gitlab_logs:/var/log/gitlab
+      - gitlab_config:/etc/gitlab
+    networks:
+      - gitlab_network
+    environment:
+      GITLAB_OMNIBUS_CONFIG: "from_file('/omnibus_config.rb')"
+    configs:
+      - source: gitlab_rb
+        target: /omnibus_config.rb
+    secrets:
+      - gitlab_root_password
+  gitlab-runner:
+    image: gitlab/gitlab-runner:alpine
+    deploy:
+      mode: replicated
+      replicas: 4
+configs:
+  gitlab_rb:
+    external: true
+secrets:
+  gitlab_root_password:
+    external: true
+networks:
+  gitlab_network:
+    driver: overlay
+    attachable: true
+volumes:
+  gitlab_data:
+    driver: "cloudstor:aws"
+    driver_opts:
+      backing: shared
+  gitlab_config:
+    driver: "cloudstor:aws"
+    driver_opts:
+      backing: shared
+  gitlab_logs:
+    driver: "cloudstor:aws"
+    driver_opts:
+      backing: shared
