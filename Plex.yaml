@@ -15,7 +15,7 @@ services:
       - /data/media/Videos/Movies:/movies
       - /data/plex/transcode:/transcode
     restart:
-      always
+      always 
 
 
 
